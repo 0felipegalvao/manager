@@ -1,0 +1,278 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enum para roles de usuários
+enum UserRole {
+  ADMIN
+  CONTADOR
+  ASSISTENTE
+}
+
+// Enum para status de clientes
+enum ClientStatus {
+  ATIVO
+  INATIVO
+  SUSPENSO
+}
+
+// Enum para regimes tributários
+enum TaxRegime {
+  SIMPLES_NACIONAL
+  LUCRO_PRESUMIDO
+  LUCRO_REAL
+  MEI
+}
+
+// Enum para tipos de documentos
+enum DocumentType {
+  NOTA_FISCAL
+  RECIBO
+  CONTRATO
+  BALANCETE
+  DRE
+  DECLARACAO
+  OUTROS
+}
+
+// Enum para status de documentos
+enum DocumentStatus {
+  PENDENTE
+  APROVADO
+  REJEITADO
+  ARQUIVADO
+}
+
+// Enum para tipos de obrigações fiscais
+enum ObligationType {
+  MENSAL
+  TRIMESTRAL
+  SEMESTRAL
+  ANUAL
+  EVENTUAL
+}
+
+// Enum para status de obrigações
+enum ObligationStatus {
+  PENDENTE
+  EM_ANDAMENTO
+  CONCLUIDA
+  ATRASADA
+  CANCELADA
+}
+
+// Modelo de Usuários
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  password  String
+  role      UserRole @default(CONTADOR)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  clients       Client[]
+  documents     Document[]
+  tasks         Task[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+
+  @@map("users")
+}
+
+// Modelo de Clientes/Empresas
+model Client {
+  id                    Int         @id @default(autoincrement())
+  razaoSocial          String
+  nomeFantasia         String?
+  cnpj                 String      @unique
+  inscricaoEstadual    String?
+  inscricaoMunicipal   String?
+  taxRegime            TaxRegime
+  status               ClientStatus @default(ATIVO)
+
+  // Endereço
+  endereco             String
+  numero               String
+  complemento          String?
+  bairro               String
+  cidade               String
+  estado               String      @db.Char(2)
+  cep                  String      @db.Char(8)
+
+  // Contatos
+  telefone             String?
+  celular              String?
+  email                String?
+  emailContador        String?
+
+  // Dados comerciais
+  dataAbertura         DateTime?
+  capitalSocial        Decimal?    @db.Decimal(15,2)
+  atividadePrincipal   String?
+
+  // Controle
+  dataVencimento       DateTime
+  valorMensal          Decimal?    @db.Decimal(10,2)
+  observacoes          String?
+
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  // Relacionamentos
+  userId               Int
+  user                 User        @relation(fields: [userId], references: [id])
+  documents            Document[]
+  obligations          Obligation[]
+  tasks                Task[]
+  contacts             Contact[]
+  auditLogs            AuditLog[]
+
+  @@map("clients")
+}
+
+// Modelo de Contatos dos Clientes
+model Contact {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String?
+  phone     String?
+  position  String?
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  clientId  Int
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("contacts")
+}
+
+// Modelo de Documentos
+model Document {
+  id          Int            @id @default(autoincrement())
+  name        String
+  fileName    String
+  filePath    String
+  fileSize    Int
+  mimeType    String
+  type        DocumentType
+  status      DocumentStatus @default(PENDENTE)
+  description String?
+  version     Int            @default(1)
+  tags        String[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // Relacionamentos
+  clientId    Int
+  client      Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  userId      Int
+  user        User           @relation(fields: [userId], references: [id])
+  auditLogs   AuditLog[]
+
+  @@map("documents")
+}
+
+// Modelo de Obrigações Fiscais
+model Obligation {
+  id          Int               @id @default(autoincrement())
+  name        String
+  description String?
+  type        ObligationType
+  status      ObligationStatus  @default(PENDENTE)
+  dueDate     DateTime
+  completedAt DateTime?
+  priority    Int               @default(1) // 1=baixa, 2=média, 3=alta
+  recurrent   Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  // Relacionamentos
+  clientId    Int
+  client      Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tasks       Task[]
+  auditLogs   AuditLog[]
+
+  @@map("obligations")
+}
+
+// Modelo de Tarefas
+model Task {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  status      String   @default("PENDENTE") // PENDENTE, EM_ANDAMENTO, CONCLUIDA, CANCELADA
+  priority    Int      @default(1) // 1=baixa, 2=média, 3=alta
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  userId       Int?
+  user         User?       @relation(fields: [userId], references: [id])
+  clientId     Int?
+  client       Client?     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  obligationId Int?
+  obligation   Obligation? @relation(fields: [obligationId], references: [id], onDelete: Cascade)
+
+  @@map("tasks")
+}
+
+// Modelo de Notificações
+model Notification {
+  id        Int      @id @default(autoincrement())
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO, WARNING, ERROR, SUCCESS
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+// Modelo de Logs de Auditoria
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  action      String   // CREATE, UPDATE, DELETE, LOGIN, LOGOUT, etc.
+  entity      String   // User, Client, Document, etc.
+  entityId    Int?
+  oldValues   Json?
+  newValues   Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  // Relacionamentos
+  userId      Int?
+  user        User?      @relation(fields: [userId], references: [id])
+  clientId    Int?
+  client      Client?    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  documentId  Int?
+  document    Document?  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  obligationId Int?
+  obligation  Obligation? @relation(fields: [obligationId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
+}

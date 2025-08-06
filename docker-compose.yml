@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: gestao_contabil_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gestao_contabil
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - gestao_network
+
+  # DBGate - Database Administration Tool
+  dbgate:
+    image: dbgate/dbgate:latest
+    container_name: gestao_contabil_dbgate
+    restart: unless-stopped
+    ports:
+      - "3080:3000"
+    environment:
+      CONNECTIONS: con1
+      LABEL_con1: PostgreSQL
+      SERVER_con1: postgres
+      USER_con1: postgres
+      PASSWORD_con1: postgres
+      PORT_con1: 5432
+      ENGINE_con1: postgres@dbgate-plugin-postgres
+      DATABASE_con1: gestao_contabil
+    depends_on:
+      - postgres
+    networks:
+      - gestao_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  gestao_network:
+    driver: bridge
