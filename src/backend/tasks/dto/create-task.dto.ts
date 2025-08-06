@@ -1,19 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional, IsInt, IsEnum, IsDateString, Min } from 'class-validator';
-
-export enum TaskStatus {
-  PENDENTE = 'PENDENTE',
-  EM_ANDAMENTO = 'EM_ANDAMENTO',
-  CONCLUIDA = 'CONCLUIDA',
-  CANCELADA = 'CANCELADA',
-}
-
-export enum TaskPriority {
-  BAIXA = 'BAIXA',
-  MEDIA = 'MEDIA',
-  ALTA = 'ALTA',
-  URGENTE = 'URGENTE',
-}
+import { IsString, IsNotEmpty, IsOptional, IsInt, IsDateString, Min, Max } from 'class-validator';
 
 export class CreateTaskDto {
   @ApiProperty({
@@ -35,23 +21,26 @@ export class CreateTaskDto {
 
   @ApiProperty({
     description: 'Status da tarefa',
-    enum: TaskStatus,
-    example: TaskStatus.PENDENTE,
+    example: 'PENDENTE',
+    enum: ['PENDENTE', 'EM_ANDAMENTO', 'CONCLUIDA', 'CANCELADA'],
     required: false,
   })
   @IsOptional()
-  @IsEnum(TaskStatus, { message: 'Status deve ser um valor válido' })
-  status?: TaskStatus = TaskStatus.PENDENTE;
+  @IsString({ message: 'Status deve ser uma string' })
+  status?: string = 'PENDENTE';
 
   @ApiProperty({
-    description: 'Prioridade da tarefa',
-    enum: TaskPriority,
-    example: TaskPriority.MEDIA,
+    description: 'Prioridade da tarefa (1=baixa, 2=média, 3=alta)',
+    example: 2,
+    minimum: 1,
+    maximum: 3,
     required: false,
   })
   @IsOptional()
-  @IsEnum(TaskPriority, { message: 'Prioridade deve ser um valor válido' })
-  priority?: TaskPriority = TaskPriority.MEDIA;
+  @IsInt({ message: 'Prioridade deve ser um número inteiro' })
+  @Min(1, { message: 'Prioridade deve ser no mínimo 1' })
+  @Max(3, { message: 'Prioridade deve ser no máximo 3' })
+  priority?: number = 1;
 
   @ApiProperty({
     description: 'Data de vencimento da tarefa',
@@ -63,14 +52,14 @@ export class CreateTaskDto {
   dueDate?: string;
 
   @ApiProperty({
-    description: 'ID do usuário responsável pela tarefa',
-    example: 2,
+    description: 'ID da obrigação relacionada à tarefa',
+    example: 1,
     required: false,
   })
   @IsOptional()
-  @IsInt({ message: 'ID do responsável deve ser um número inteiro' })
-  @Min(1, { message: 'ID do responsável deve ser maior que 0' })
-  assignedToId?: number;
+  @IsInt({ message: 'ID da obrigação deve ser um número inteiro' })
+  @Min(1, { message: 'ID da obrigação deve ser maior que 0' })
+  obligationId?: number;
 
   @ApiProperty({
     description: 'ID do cliente relacionado à tarefa',

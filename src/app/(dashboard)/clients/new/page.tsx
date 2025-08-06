@@ -25,29 +25,53 @@ export default function NewClientPage() {
       const clientData = {
         razaoSocial: data.razaoSocial,
         nomeFantasia: data.nomeFantasia || undefined,
-        cnpj: data.documento.replace(/\D/g, ''), // Remove formatação
+        cnpj: (data.cnpj || '').replace(/\D/g, ''), // Remove formatação
         inscricaoEstadual: data.inscricaoEstadual || undefined,
         inscricaoMunicipal: data.inscricaoMunicipal || undefined,
-        taxRegime: data.regimeTributario,
+        taxRegime: data.taxRegime,
         status: data.status || 'ATIVO',
-        endereco: data.logradouro,
+        endereco: data.endereco,
         numero: data.numero,
         complemento: data.complemento || undefined,
         bairro: data.bairro,
         cidade: data.cidade,
         estado: data.estado,
-        cep: data.cep.replace(/\D/g, ''), // Remove formatação
+        cep: (data.cep || '').replace(/\D/g, ''), // Remove formatação
         telefone: data.telefone || undefined,
-        celular: undefined,
+        celular: data.celular || undefined,
         email: data.email || undefined,
-        emailContador: undefined,
-        dataAbertura: undefined,
-        capitalSocial: undefined,
-        atividadePrincipal: undefined,
-        dataVencimento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        valorMensal: undefined,
-        observacoes: undefined,
+        emailContador: data.emailContador || undefined,
+        dataAbertura: data.dataAbertura ? new Date(data.dataAbertura).toISOString() : undefined,
+        capitalSocial: data.capitalSocial || undefined,
+        atividadePrincipal: data.atividadePrincipal || undefined,
+        dataVencimento: data.dataVencimento ? new Date(data.dataVencimento).toISOString() : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        valorMensal: data.valorMensal && data.valorMensal > 0 ? data.valorMensal : undefined,
+        observacoes: data.observacoes || undefined,
+        // Campos específicos do sistema contábil
+        cpf: data.cpf || undefined,
+        codigoSimples: data.codigoSimples || undefined,
+        inicioAtividade: data.inicioAtividade ? new Date(data.inicioAtividade).toISOString() : undefined,
+        inicioEscritorio: data.inicioEscritorio ? new Date(data.inicioEscritorio).toISOString() : undefined,
+        dataSituacao: data.dataSituacao ? new Date(data.dataSituacao).toISOString() : undefined,
+        porte: data.porte && data.porte !== '' ? data.porte : undefined,
+        departmentId: data.departmentId || undefined,
+        porcPJEcac: data.porcPJEcac && data.porcPJEcac !== '' ? data.porcPJEcac : undefined,
+        procPFEcac: data.procPFEcac && data.procPFEcac !== '' ? data.procPFEcac : undefined,
       };
+
+      console.log('Dados recebidos do formulário:', data);
+      console.log('Dados enviados para API:', clientData);
+      console.log('Campos obrigatórios verificação:');
+      console.log('- razaoSocial:', clientData.razaoSocial);
+      console.log('- cnpj:', clientData.cnpj, 'length:', clientData.cnpj?.length);
+      console.log('- taxRegime:', clientData.taxRegime);
+      console.log('- endereco:', clientData.endereco);
+      console.log('- numero:', clientData.numero);
+      console.log('- bairro:', clientData.bairro);
+      console.log('- cidade:', clientData.cidade);
+      console.log('- estado:', clientData.estado, 'length:', clientData.estado?.length);
+      console.log('- cep:', clientData.cep, 'length:', clientData.cep?.length);
+      console.log('- dataVencimento:', clientData.dataVencimento);
 
       const { clientsApi } = await import('@/lib/api');
       await clientsApi.create(clientData);
@@ -55,9 +79,21 @@ export default function NewClientPage() {
       toast.success('Cliente criado com sucesso!');
       router.push('/clients');
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || error.message || 'Erro ao criar cliente';
-      toast.error(errorMessage);
-      console.error('Erro:', error);
+      console.error('Erro completo:', error);
+      console.error('Dados da resposta:', error.response?.data);
+
+      if (error.response?.data?.message && Array.isArray(error.response.data.message)) {
+        // Mostrar erros de validação específicos
+        console.error('Erros de validação detalhados:');
+        error.response.data.message.forEach((err: string, index: number) => {
+          console.error(`${index + 1}. ${err}`);
+        });
+        const validationErrors = error.response.data.message.join(', ');
+        toast.error(`Erros de validação: ${validationErrors}`);
+      } else {
+        const errorMessage = error.response?.data?.message || error.message || 'Erro ao criar cliente';
+        toast.error(errorMessage);
+      }
     }
   };
 

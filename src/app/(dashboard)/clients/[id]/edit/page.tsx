@@ -31,29 +31,58 @@ export default function EditClientPage() {
         const { clientsApi } = await import('@/lib/api');
         const clientData = await clientsApi.getById(Number(params.id));
 
-        // Mapear dados do backend para o formato do frontend
+        // Mapear dados do backend para o formato do frontend (nova estrutura)
         const mappedClient = {
-          id: clientData.id.toString(),
+          // Dados Básicos
           razaoSocial: clientData.razaoSocial,
           nomeFantasia: clientData.nomeFantasia || '',
-          documento: clientData.cnpj,
+          cnpj: clientData.cnpj,
+          cpf: clientData.cpf || '',
           inscricaoEstadual: clientData.inscricaoEstadual || '',
           inscricaoMunicipal: clientData.inscricaoMunicipal || '',
-          tiposPessoa: 'JURIDICA' as const, // Assumindo JURIDICA por ter CNPJ
-          regimeTributario: clientData.taxRegime,
+
+          // Endereço e Contato
           cep: clientData.cep,
-          logradouro: clientData.endereco,
+          endereco: clientData.endereco,
           numero: clientData.numero,
           complemento: clientData.complemento || '',
           bairro: clientData.bairro,
           cidade: clientData.cidade,
           estado: clientData.estado,
           telefone: clientData.telefone || '',
+          celular: clientData.celular || '',
           email: clientData.email || '',
+          emailContador: clientData.emailContador || '',
+
+          // Situação Cadastral
           status: clientData.status,
-          tags: [],
-          createdAt: clientData.createdAt,
-          updatedAt: clientData.updatedAt,
+          dataAbertura: clientData.dataAbertura || '',
+          dataSituacao: clientData.dataSituacao || '',
+          inicioAtividade: clientData.inicioAtividade || '',
+          inicioEscritorio: clientData.inicioEscritorio || '',
+
+          // Simples Nacional
+          codigoSimples: clientData.codigoSimples || '',
+          porte: clientData.porte || '',
+          porcPJEcac: clientData.porcPJEcac || '',
+          procPFEcac: clientData.procPFEcac || '',
+
+          // Departamento
+          departmentId: clientData.departmentId || null,
+
+          // Dados Financeiros
+          capitalSocial: clientData.capitalSocial || 0,
+          valorMensal: clientData.valorMensal || 0,
+          dataVencimento: clientData.dataVencimento || '',
+
+          // Atividade
+          atividadePrincipal: clientData.atividadePrincipal || '',
+
+          // Observações
+          observacoes: clientData.observacoes || '',
+
+          // Regime Tributário
+          taxRegime: clientData.taxRegime,
         };
 
         setClient(mappedClient);
@@ -73,24 +102,56 @@ export default function EditClientPage() {
 
   const handleUpdateClient = async (data: any) => {
     try {
-      // Mapear dados do frontend para o formato do backend
+      // Mapear dados do frontend para o formato do backend (nova estrutura)
       const clientData = {
+        // Dados Básicos
         razaoSocial: data.razaoSocial,
-        nomeFantasia: data.nomeFantasia || null,
-        cnpj: data.documento.replace(/\D/g, ''), // Remove formatação
-        inscricaoEstadual: data.inscricaoEstadual || null,
-        inscricaoMunicipal: data.inscricaoMunicipal || null,
-        taxRegime: data.regimeTributario,
+        nomeFantasia: data.nomeFantasia || undefined,
+        cnpj: (data.cnpj || '').replace(/\D/g, ''), // Remove formatação
+        cpf: data.cpf || undefined,
+        inscricaoEstadual: data.inscricaoEstadual || undefined,
+        inscricaoMunicipal: data.inscricaoMunicipal || undefined,
+        taxRegime: data.taxRegime,
         status: data.status || 'ATIVO',
-        endereco: data.logradouro,
+
+        // Endereço e Contato
+        endereco: data.endereco,
         numero: data.numero,
-        complemento: data.complemento || null,
+        complemento: data.complemento || undefined,
         bairro: data.bairro,
         cidade: data.cidade,
         estado: data.estado,
-        cep: data.cep.replace(/\D/g, ''), // Remove formatação
-        telefone: data.telefone || null,
-        email: data.email || null,
+        cep: (data.cep || '').replace(/\D/g, ''), // Remove formatação
+        telefone: data.telefone || undefined,
+        celular: data.celular || undefined,
+        email: data.email || undefined,
+        emailContador: data.emailContador || undefined,
+
+        // Situação Cadastral
+        dataAbertura: data.dataAbertura ? new Date(data.dataAbertura).toISOString() : undefined,
+        dataSituacao: data.dataSituacao ? new Date(data.dataSituacao).toISOString() : undefined,
+        inicioAtividade: data.inicioAtividade ? new Date(data.inicioAtividade).toISOString() : undefined,
+        inicioEscritorio: data.inicioEscritorio ? new Date(data.inicioEscritorio).toISOString() : undefined,
+
+        // Simples Nacional
+        codigoSimples: data.codigoSimples || undefined,
+        porte: data.porte && data.porte !== '' ? data.porte : undefined,
+        porcPJEcac: data.porcPJEcac && data.porcPJEcac !== '' ? data.porcPJEcac : undefined,
+        procPFEcac: data.procPFEcac && data.procPFEcac !== '' ? data.procPFEcac : undefined,
+
+        // Departamento
+        departmentId: data.departmentId || undefined,
+
+        // Dados Financeiros
+        capitalSocial: data.capitalSocial && data.capitalSocial > 0 ? data.capitalSocial : undefined,
+        valorMensal: data.valorMensal && data.valorMensal > 0 ? data.valorMensal : undefined,
+        dataVencimento: data.dataVencimento ? new Date(data.dataVencimento).toISOString() : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+
+        // Atividade
+        atividadePrincipal: data.atividadePrincipal || undefined,
+
+        // Observações
+        observacoes: data.observacoes || undefined,
       };
 
       const { clientsApi } = await import('@/lib/api');

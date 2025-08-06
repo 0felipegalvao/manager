@@ -243,4 +243,101 @@ __decorate([
     (0, class_validator_1.IsString)({ message: 'Observações deve ser uma string' }),
     __metadata("design:type", String)
 ], CreateClientDto.prototype, "observacoes", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'CPF do responsável',
+        required: false,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'CPF deve ser uma string' }),
+    __metadata("design:type", String)
+], CreateClientDto.prototype, "cpf", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Código do Simples Nacional',
+        required: false,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Código Simples deve ser uma string' }),
+    __metadata("design:type", String)
+], CreateClientDto.prototype, "codigoSimples", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Data de início da atividade',
+        required: false,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsDateString)({}, { message: 'Início da atividade deve ser uma data válida' }),
+    __metadata("design:type", String)
+], CreateClientDto.prototype, "inicioAtividade", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Data de início no escritório',
+        required: false,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsDateString)({}, { message: 'Início no escritório deve ser uma data válida' }),
+    __metadata("design:type", String)
+], CreateClientDto.prototype, "inicioEscritorio", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Data da situação',
+        required: false,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsDateString)({}, { message: 'Data da situação deve ser uma data válida' }),
+    __metadata("design:type", String)
+], CreateClientDto.prototype, "dataSituacao", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Porte da empresa',
+        enum: prisma_1.CompanySize,
+        required: false,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(prisma_1.CompanySize, { message: 'Porte inválido' }),
+    __metadata("design:type", String)
+], CreateClientDto.prototype, "porte", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'ID do departamento',
+        required: false,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsInt)({ message: 'ID do departamento deve ser um número inteiro' }),
+    __metadata("design:type", Number)
+], CreateClientDto.prototype, "departmentId", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Procuração PJ ECAC',
+        enum: prisma_1.EcacPJ,
+        required: false,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(prisma_1.EcacPJ, { message: 'Valor ECAC PJ inválido' }),
+    __metadata("design:type", String)
+], CreateClientDto.prototype, "porcPJEcac", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Procuração PF ECAC',
+        enum: prisma_1.EcacPF,
+        required: false,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(prisma_1.EcacPF, { message: 'Valor ECAC PF inválido' }),
+    __metadata("design:type", String)
+], CreateClientDto.prototype, "procPFEcac", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Campos personalizados (JSON) - apenas para campos dinâmicos',
+        required: false,
+        example: {
+            campoPersonalizado1: 'valor1',
+            campoPersonalizado2: 'valor2'
+        }
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsObject)({ message: 'Campos personalizados deve ser um objeto' }),
+    __metadata("design:type", Object)
+], CreateClientDto.prototype, "customFields", void 0);
 //# sourceMappingURL=create-client.dto.js.map

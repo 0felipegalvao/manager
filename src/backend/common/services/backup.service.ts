@@ -82,28 +82,28 @@ export class BackupService {
         this.createDocumentsBackup(),
       ]);
 
-      // Registrar backup no banco
-      await this.prisma.backupLog.create({
-        data: {
-          type: 'FULL',
-          status: 'SUCCESS',
-          databasePath: databaseBackup,
-          documentsPath: documentsBackup,
-          size: await this.getBackupSize([databaseBackup, documentsBackup]),
-        },
-      });
+      // Registrar backup no banco (comentado - modelo BackupLog não existe)
+      // await this.prisma.backupLog.create({
+      //   data: {
+      //     type: 'FULL',
+      //     status: 'SUCCESS',
+      //     databasePath: databaseBackup,
+      //     documentsPath: documentsBackup,
+      //     size: await this.getBackupSize([databaseBackup, documentsBackup]),
+      //   },
+      // });
 
       console.log('✅ Backup completo finalizado com sucesso!');
       return { database: databaseBackup, documents: documentsBackup };
     } catch (error) {
-      // Registrar falha no backup
-      await this.prisma.backupLog.create({
-        data: {
-          type: 'FULL',
-          status: 'FAILED',
-          errorMessage: error.message,
-        },
-      });
+      // Registrar falha no backup (comentado - modelo BackupLog não existe)
+      // await this.prisma.backupLog.create({
+      //   data: {
+      //     type: 'FULL',
+      //     status: 'FAILED',
+      //     errorMessage: error.message,
+      //   },
+      // });
 
       console.error('❌ Falha no backup completo:', error);
       throw error;
@@ -129,14 +129,14 @@ export class BackupService {
         }
       }
 
-      // Limpar registros antigos do banco
-      await this.prisma.backupLog.deleteMany({
-        where: {
-          createdAt: {
-            lt: cutoffDate,
-          },
-        },
-      });
+      // Limpar registros antigos do banco (comentado - modelo BackupLog não existe)
+      // await this.prisma.backupLog.deleteMany({
+      //   where: {
+      //     createdAt: {
+      //       lt: cutoffDate,
+      //     },
+      //   },
+      // });
 
       console.log(`🧹 Limpeza concluída: ${deletedCount} backups antigos removidos`);
     } catch (error) {
@@ -146,22 +146,26 @@ export class BackupService {
   }
 
   async getBackupHistory(limit: number = 10) {
-    return this.prisma.backupLog.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-    });
+    // Comentado - modelo BackupLog não existe
+    // return this.prisma.backupLog.findMany({
+    //   orderBy: { createdAt: 'desc' },
+    //   take: limit,
+    // });
+    return [];
   }
 
   async getBackupStats() {
-    const [total, successful, failed, lastBackup] = await Promise.all([
-      this.prisma.backupLog.count(),
-      this.prisma.backupLog.count({ where: { status: 'SUCCESS' } }),
-      this.prisma.backupLog.count({ where: { status: 'FAILED' } }),
-      this.prisma.backupLog.findFirst({
-        where: { status: 'SUCCESS' },
-        orderBy: { createdAt: 'desc' },
-      }),
-    ]);
+    // Comentado - modelo BackupLog não existe
+    // const [total, successful, failed, lastBackup] = await Promise.all([
+    //   this.prisma.backupLog.count(),
+    //   this.prisma.backupLog.count({ where: { status: 'SUCCESS' } }),
+    //   this.prisma.backupLog.count({ where: { status: 'FAILED' } }),
+    //   this.prisma.backupLog.findFirst({
+    //     where: { status: 'SUCCESS' },
+    //     orderBy: { createdAt: 'desc' },
+    //   }),
+    // ]);
+    const [total, successful, failed, lastBackup] = [0, 0, 0, null];
 
     return {
       total,

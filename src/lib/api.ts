@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
 // Configuração base da API
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 // Criar instância do axios
 const api: AxiosInstance = axios.create({
@@ -14,6 +14,11 @@ const api: AxiosInstance = axios.create({
 
 // Função para obter token (pode ser do localStorage ou cookies)
 const getAuthToken = () => {
+  // Verifica se está no lado do cliente
+  if (typeof window === 'undefined') {
+    return null; // No servidor, não há token
+  }
+
   // Primeiro tenta localStorage
   let token = localStorage.getItem('token');
 
@@ -312,6 +317,87 @@ export const notificationsApi = {
 
   delete: async (id: number) => {
     const response = await api.delete(`/notifications/${id}`);
+    return response.data;
+  },
+};
+
+// Funções da API de Tarefas
+export const tasksApi = {
+  getAll: async (clientId?: number, status?: string, priority?: number) => {
+    const response = await api.get('/tasks', { params: { clientId, status, priority } });
+    return response.data;
+  },
+
+  getById: async (id: number) => {
+    const response = await api.get(`/tasks/${id}`);
+    return response.data;
+  },
+
+  getStats: async () => {
+    const response = await api.get('/tasks/stats');
+    return response.data;
+  },
+
+  getByStatus: async (status: string) => {
+    const response = await api.get(`/tasks/by-status/${status}`);
+    return response.data;
+  },
+
+  getUpcoming: async (days?: number) => {
+    const response = await api.get('/tasks/upcoming', { params: { days } });
+    return response.data;
+  },
+
+  getOverdue: async () => {
+    const response = await api.get('/tasks/overdue');
+    return response.data;
+  },
+
+  create: async (data: any) => {
+    const response = await api.post('/tasks', data);
+    return response.data;
+  },
+
+  update: async (id: number, data: any) => {
+    const response = await api.patch(`/tasks/${id}`, data);
+    return response.data;
+  },
+
+  complete: async (id: number) => {
+    const response = await api.patch(`/tasks/${id}/complete`);
+    return response.data;
+  },
+
+  delete: async (id: number) => {
+    const response = await api.delete(`/tasks/${id}`);
+    return response.data;
+  },
+};
+
+// Funções da API de Auditoria
+export const auditApi = {
+  getAll: async (filters?: any, pagination?: any) => {
+    const response = await api.get('/audit', { params: { ...filters, ...pagination } });
+    return response.data;
+  },
+
+  getById: async (id: number) => {
+    const response = await api.get(`/audit/${id}`);
+    return response.data;
+  },
+
+  getStats: async (filters?: any) => {
+    const response = await api.get('/audit/stats', { params: filters });
+    return response.data;
+  },
+
+  getByEntity: async (entity: string, entityId: number, pagination?: any) => {
+    const response = await api.get(`/audit/entity/${entity}/${entityId}`, { params: pagination });
+    return response.data;
+  },
+
+  getByUser: async (userId: number, filters?: any, pagination?: any) => {
+    const response = await api.get(`/audit/user/${userId}`, { params: { ...filters, ...pagination } });
     return response.data;
   },
 };

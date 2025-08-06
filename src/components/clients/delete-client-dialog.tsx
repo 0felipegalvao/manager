@@ -16,25 +16,41 @@ interface Client {
   id: string
   razaoSocial: string
   nomeFantasia?: string
-  documento: string
+  cnpj: string
+  cpf?: string
   inscricaoEstadual?: string
   inscricaoMunicipal?: string
-  tiposPessoa: "FISICA" | "JURIDICA"
-  regimeTributario: "SIMPLES_NACIONAL" | "LUCRO_PRESUMIDO" | "LUCRO_REAL" | "MEI"
+  taxRegime: "SIMPLES_NACIONAL" | "LUCRO_PRESUMIDO" | "LUCRO_REAL" | "MEI"
   cep: string
-  logradouro: string
+  endereco: string
   numero: string
   complemento?: string
   bairro: string
   cidade: string
   estado: string
-  telefone: string
-  email: string
+  telefone?: string
+  celular?: string
+  email?: string
+  emailContador?: string
   status: "ATIVO" | "INATIVO"
-  tags: string[]
+  dataAbertura?: string
+  dataSituacao?: string
+  inicioAtividade?: string
+  inicioEscritorio?: string
+  codigoSimples?: string
+  porte?: string
+  porcPJEcac?: string
+  procPFEcac?: string
+  departmentId?: number | null
+  capitalSocial?: number
+  valorMensal?: number
+  dataVencimento?: string
+  atividadePrincipal?: string
+  observacoes?: string
+  tags?: string[]
   customFields?: Record<string, any>
-  createdAt: string
-  updatedAt: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 interface DeleteClientDialogProps {
@@ -55,6 +71,7 @@ export function DeleteClientDialog({
   if (!client) return null;
 
   const formatDocument = (doc: string, type: 'FISICA' | 'JURIDICA') => {
+    if (!doc) return '';
     if (type === 'JURIDICA') {
       return doc.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
     } else {
@@ -91,10 +108,10 @@ export function DeleteClientDialog({
               </div>
               <div>
                 <span className="text-sm font-medium text-muted-foreground">
-                  {client.tiposPessoa === 'JURIDICA' ? 'CNPJ:' : 'CPF:'}
+                  CNPJ:
                 </span>
                 <p className="font-mono text-sm">
-                  {formatDocument(client.documento, client.tiposPessoa)}
+                  {formatDocument(client.cnpj, 'JURIDICA')}
                 </p>
               </div>
             </div>

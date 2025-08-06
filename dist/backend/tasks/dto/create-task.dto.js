@@ -9,27 +9,13 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CreateTaskDto = exports.TaskPriority = exports.TaskStatus = void 0;
+exports.CreateTaskDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
-var TaskStatus;
-(function (TaskStatus) {
-    TaskStatus["PENDENTE"] = "PENDENTE";
-    TaskStatus["EM_ANDAMENTO"] = "EM_ANDAMENTO";
-    TaskStatus["CONCLUIDA"] = "CONCLUIDA";
-    TaskStatus["CANCELADA"] = "CANCELADA";
-})(TaskStatus || (exports.TaskStatus = TaskStatus = {}));
-var TaskPriority;
-(function (TaskPriority) {
-    TaskPriority["BAIXA"] = "BAIXA";
-    TaskPriority["MEDIA"] = "MEDIA";
-    TaskPriority["ALTA"] = "ALTA";
-    TaskPriority["URGENTE"] = "URGENTE";
-})(TaskPriority || (exports.TaskPriority = TaskPriority = {}));
 class CreateTaskDto {
     constructor() {
-        this.status = TaskStatus.PENDENTE;
-        this.priority = TaskPriority.MEDIA;
+        this.status = 'PENDENTE';
+        this.priority = 1;
     }
 }
 exports.CreateTaskDto = CreateTaskDto;
@@ -55,24 +41,27 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Status da tarefa',
-        enum: TaskStatus,
-        example: TaskStatus.PENDENTE,
+        example: 'PENDENTE',
+        enum: ['PENDENTE', 'EM_ANDAMENTO', 'CONCLUIDA', 'CANCELADA'],
         required: false,
     }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsEnum)(TaskStatus, { message: 'Status deve ser um valor válido' }),
+    (0, class_validator_1.IsString)({ message: 'Status deve ser uma string' }),
     __metadata("design:type", String)
 ], CreateTaskDto.prototype, "status", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        description: 'Prioridade da tarefa',
-        enum: TaskPriority,
-        example: TaskPriority.MEDIA,
+        description: 'Prioridade da tarefa (1=baixa, 2=média, 3=alta)',
+        example: 2,
+        minimum: 1,
+        maximum: 3,
         required: false,
     }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsEnum)(TaskPriority, { message: 'Prioridade deve ser um valor válido' }),
-    __metadata("design:type", String)
+    (0, class_validator_1.IsInt)({ message: 'Prioridade deve ser um número inteiro' }),
+    (0, class_validator_1.Min)(1, { message: 'Prioridade deve ser no mínimo 1' }),
+    (0, class_validator_1.Max)(3, { message: 'Prioridade deve ser no máximo 3' }),
+    __metadata("design:type", Number)
 ], CreateTaskDto.prototype, "priority", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
@@ -86,15 +75,15 @@ __decorate([
 ], CreateTaskDto.prototype, "dueDate", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        description: 'ID do usuário responsável pela tarefa',
-        example: 2,
+        description: 'ID da obrigação relacionada à tarefa',
+        example: 1,
         required: false,
     }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsInt)({ message: 'ID do responsável deve ser um número inteiro' }),
-    (0, class_validator_1.Min)(1, { message: 'ID do responsável deve ser maior que 0' }),
+    (0, class_validator_1.IsInt)({ message: 'ID da obrigação deve ser um número inteiro' }),
+    (0, class_validator_1.Min)(1, { message: 'ID da obrigação deve ser maior que 0' }),
     __metadata("design:type", Number)
-], CreateTaskDto.prototype, "assignedToId", void 0);
+], CreateTaskDto.prototype, "obligationId", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'ID do cliente relacionado à tarefa',

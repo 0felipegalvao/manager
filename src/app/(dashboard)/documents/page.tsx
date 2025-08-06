@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Upload, Search, Filter, Download, Eye, MoreHorizontal, FileText, Image, File, Calendar } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Plus, Upload, Search, Filter, Download, Eye, MoreHorizontal, FileText, Image, File, Calendar, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,8 +19,20 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Select,
   SelectContent,
@@ -35,93 +48,134 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { useApi, useMutation } from '@/hooks/useApi';
+import { toast } from 'sonner';
 
-// Dados mock para demonstração
-const mockDocuments = [
-  {
-    id: 1,
-    name: 'Contrato Social - Empresa ABC',
-    type: 'PDF',
-    size: '2.4 MB',
-    client: 'Empresa ABC Ltda',
-    category: 'Contrato',
-    uploadDate: '2024-01-15',
-    status: 'Aprovado'
-  },
-  {
-    id: 2,
-    name: 'Balanço Patrimonial 2023',
-    type: 'Excel',
-    size: '1.8 MB',
-    client: 'Tech Solutions S.A.',
-    category: 'Financeiro',
-    uploadDate: '2024-01-10',
-    status: 'Pendente'
-  },
-  {
-    id: 3,
-    name: 'Certidão Negativa',
-    type: 'PDF',
-    size: '856 KB',
-    client: 'João Silva',
-    category: 'Certidão',
-    uploadDate: '2024-01-08',
-    status: 'Aprovado'
-  },
-  {
-    id: 4,
-    name: 'Nota Fiscal Janeiro',
-    type: 'XML',
-    size: '124 KB',
-    client: 'Empresa ABC Ltda',
-    category: 'Fiscal',
-    uploadDate: '2024-01-05',
-    status: 'Processando'
-  },
-];
-
-const getFileIcon = (type: string) => {
-  switch (type.toLowerCase()) {
-    case 'pdf':
-      return <FileText className="h-4 w-4 text-red-500" />;
-    case 'excel':
-      return <File className="h-4 w-4 text-green-500" />;
-    case 'xml':
-      return <File className="h-4 w-4 text-blue-500" />;
-    case 'image':
-      return <Image className="h-4 w-4 text-purple-500" />;
-    default:
-      return <File className="h-4 w-4 text-gray-500" />;
-  }
-};
-
+interface Document {
+  id: number;
+  name: string;
+  type: string;
+  status: string;
+  filePath?: string;
+  fileSize?: number;
+  uploadedAt: string;
+  updatedAt: string;
+  client: {
+    id: number;
+    razaoSocial: string;
+    cnpj: string;
+  };
+  user: {
+    id: number;
+    name: string;
+    email: string;
+  };
+}
 export default function DocumentsPage() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [documents] = useState(mockDocuments);
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
 
-  const filteredDocuments = documents.filter(doc => {
-    const matchesSearch = doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         doc.client.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || doc.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // API calls
+  const { data: documents, loading, error, refetch } = useApi<Document[]>(
+    () => fetch('/api/documents', {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    }).then(res => res.json()),
+    []
+  );
 
-  const categories = ['Contrato', 'Financeiro', 'Certidão', 'Fiscal'];
-  const totalSize = documents.reduce((acc, doc) => {
-    const size = parseFloat(doc.size.replace(/[^\d.]/g, ''));
-    return acc + size;
-  }, 0);
+  const { mutate: deleteDocument, loading: deleting } = useMutation<void, number>(
+    (id) => fetch(`/api/documents/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    }).then(res => {
+      if (!res.ok) throw new Error('Erro ao deletar documento');
+      return res.json();
+    })
+  );
+
+  // Filtrar documentos
+  const filteredDocuments = documents?.filter(document => {
+    const matchesSearch = document.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         document.client.razaoSocial.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = typeFilter === 'all' || document.type === typeFilter;
+    const matchesStatus = statusFilter === 'all' || document.status === statusFilter;
+
+    return matchesSearch && matchesType && matchesStatus;
+  }) || [];
+
+  const handleDeleteDocument = async () => {
+    if (!documentToDelete) return;
+
+    const result = await deleteDocument(documentToDelete.id);
+    if (result) {
+      toast.success('Documento removido com sucesso');
+      refetch();
+      setDocumentToDelete(null);
+    }
+  };
+
+  const getFileIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'pdf':
+        return <FileText className="h-4 w-4 text-red-500" />;
+      case 'excel':
+      case 'xlsx':
+      case 'xls':
+        return <File className="h-4 w-4 text-green-500" />;
+      case 'xml':
+        return <File className="h-4 w-4 text-blue-500" />;
+      case 'image':
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+        return <Image className="h-4 w-4 text-purple-500" />;
+      default:
+        return <File className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const variants = {
+      'APROVADO': 'default',
+      'PENDENTE': 'secondary',
+      'PROCESSANDO': 'default',
+      'REJEITADO': 'destructive',
+    } as const;
+
+    const labels = {
+      'APROVADO': 'Aprovado',
+      'PENDENTE': 'Pendente',
+      'PROCESSANDO': 'Processando',
+      'REJEITADO': 'Rejeitado',
+    };
+
+    return (
+      <Badge variant={variants[status as keyof typeof variants] || 'secondary'}>
+        {labels[status as keyof typeof labels] || status}
+      </Badge>
+    );
+  };
+
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return '-';
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+  };
 
   return (
     <>
-      <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+      <header className="flex h-16 shrink-0 items-center gap-2">
         <div className="flex items-center gap-2 px-4">
           <SidebarTrigger className="-ml-1" />
-          <Separator
-            orientation="vertical"
-            className="mr-2 data-[orientation=vertical]:h-4"
-          />
+          <Separator orientation="vertical" className="mr-2 h-4" />
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
@@ -133,123 +187,80 @@ export default function DocumentsPage() {
       </header>
 
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-        {/* Header com estatísticas */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Documentos</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{documents.length}</div>
-              <p className="text-xs text-muted-foreground">
-                +3 novos esta semana
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Espaço Utilizado</CardTitle>
-              <File className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalSize.toFixed(1)} MB</div>
-              <p className="text-xs text-muted-foreground">
-                de 1GB disponível
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {documents.filter(d => d.status === 'Pendente').length}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Aguardando aprovação
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Aprovados</CardTitle>
-              <Badge variant="default" className="h-4 w-4 p-0"></Badge>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {documents.filter(d => d.status === 'Aprovado').length}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Documentos validados
-              </p>
-            </CardContent>
-          </Card>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Documentos</h1>
+            <p className="text-muted-foreground">
+              Gerencie os documentos dos clientes
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline">
+              <Upload className="mr-2 h-4 w-4" />
+              Upload
+            </Button>
+            <Button onClick={() => router.push('/documents/new')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Documento
+            </Button>
+          </div>
         </div>
 
-        {/* Controles e filtros */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Gestão de Documentos</CardTitle>
-                <CardDescription>
-                  Centralize e organize todos os documentos dos seus clientes
-                </CardDescription>
-              </div>
-              <Button>
-                <Upload className="h-4 w-4 mr-2" />
-                Upload Documento
-              </Button>
-            </div>
+            <CardTitle>Lista de Documentos</CardTitle>
+            <CardDescription>
+              {filteredDocuments.length} documento(s) encontrado(s)
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-4 mb-4">
+            <div className="flex items-center gap-4 mb-6">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar documentos..."
+                  placeholder="Buscar por nome ou cliente..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-8"
                 />
               </div>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Categoria" />
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filtrar por tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas as categorias</SelectItem>
-                  {categories.map(category => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all">Todos os tipos</SelectItem>
+                  <SelectItem value="PDF">PDF</SelectItem>
+                  <SelectItem value="Excel">Excel</SelectItem>
+                  <SelectItem value="XML">XML</SelectItem>
+                  <SelectItem value="Image">Imagem</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="outline">
-                <Filter className="h-4 w-4 mr-2" />
-                Filtros
-              </Button>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filtrar por status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="APROVADO">Aprovado</SelectItem>
+                  <SelectItem value="PENDENTE">Pendente</SelectItem>
+                  <SelectItem value="PROCESSANDO">Processando</SelectItem>
+                  <SelectItem value="REJEITADO">Rejeitado</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Tabela de documentos */}
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Documento</TableHead>
                     <TableHead>Cliente</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead>Tamanho</TableHead>
-                    <TableHead>Data Upload</TableHead>
+                    <TableHead>Tipo</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
+                    <TableHead>Tamanho</TableHead>
+                    <TableHead>Upload</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -260,46 +271,57 @@ export default function DocumentsPage() {
                           {getFileIcon(document.type)}
                           <div>
                             <div className="font-medium">{document.name}</div>
-                            <div className="text-sm text-muted-foreground">{document.type}</div>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>{document.client}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{document.category}</Badge>
-                      </TableCell>
-                      <TableCell className="text-sm">{document.size}</TableCell>
-                      <TableCell className="text-sm">
-                        {new Date(document.uploadDate).toLocaleDateString('pt-BR')}
+                        <div>
+                          <div className="font-medium">{document.client.razaoSocial}</div>
+                          <div className="text-sm text-muted-foreground">{document.client.cnpj}</div>
+                        </div>
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={
-                            document.status === 'Aprovado' ? 'default' :
-                            document.status === 'Pendente' ? 'secondary' : 'outline'
-                          }
-                        >
-                          {document.status}
-                        </Badge>
+                        <Badge variant="outline">{document.type}</Badge>
                       </TableCell>
+                      <TableCell>{getStatusBadge(document.status)}</TableCell>
+                      <TableCell>{formatFileSize(document.fileSize)}</TableCell>
                       <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">
+                            {new Date(document.uploadedAt).toLocaleDateString('pt-BR')}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" className="h-8 w-8 p-0">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
                             <DropdownMenuItem>
-                              <Eye className="h-4 w-4 mr-2" />
+                              <Eye className="mr-2 h-4 w-4" />
                               Visualizar
                             </DropdownMenuItem>
                             <DropdownMenuItem>
-                              <Download className="h-4 w-4 mr-2" />
+                              <Download className="mr-2 h-4 w-4" />
                               Download
                             </DropdownMenuItem>
-                            <DropdownMenuItem>Editar</DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">
+                            <DropdownMenuItem
+                              onClick={() => router.push(`/documents/${document.id}`)}
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => setDocumentToDelete(document)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
                               Excluir
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -310,9 +332,42 @@ export default function DocumentsPage() {
                 </TableBody>
               </Table>
             </div>
+
+            {filteredDocuments.length === 0 && (
+              <div className="flex h-[200px] items-center justify-center">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold">Nenhum documento encontrado</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Tente ajustar os filtros ou fazer upload de um novo documento.
+                  </p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={!!documentToDelete} onOpenChange={() => setDocumentToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o documento "{documentToDelete?.name}"?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteDocument}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? 'Excluindo...' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
-  )
+  );
 }

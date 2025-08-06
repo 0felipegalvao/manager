@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional, IsEmail, IsEnum, IsDateString, IsDecimal, Length, Matches } from 'class-validator';
-import { TaxRegime, ClientStatus } from '../../../generated/prisma';
+import { IsString, IsNotEmpty, IsOptional, IsEmail, IsEnum, IsDateString, IsDecimal, Length, Matches, IsObject, IsInt } from 'class-validator';
+import { TaxRegime, ClientStatus, CompanySize, EcacPJ, EcacPF } from '../../../generated/prisma';
 
 export class CreateClientDto {
   @ApiProperty({
@@ -202,4 +202,92 @@ export class CreateClientDto {
   @IsOptional()
   @IsString({ message: 'Observações deve ser uma string' })
   observacoes?: string;
+
+  // Campos específicos do sistema contábil
+  @ApiProperty({
+    description: 'CPF do responsável',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'CPF deve ser uma string' })
+  cpf?: string;
+
+  @ApiProperty({
+    description: 'Código do Simples Nacional',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'Código Simples deve ser uma string' })
+  codigoSimples?: string;
+
+  @ApiProperty({
+    description: 'Data de início da atividade',
+    required: false,
+  })
+  @IsOptional()
+  @IsDateString({}, { message: 'Início da atividade deve ser uma data válida' })
+  inicioAtividade?: string;
+
+  @ApiProperty({
+    description: 'Data de início no escritório',
+    required: false,
+  })
+  @IsOptional()
+  @IsDateString({}, { message: 'Início no escritório deve ser uma data válida' })
+  inicioEscritorio?: string;
+
+  @ApiProperty({
+    description: 'Data da situação',
+    required: false,
+  })
+  @IsOptional()
+  @IsDateString({}, { message: 'Data da situação deve ser uma data válida' })
+  dataSituacao?: string;
+
+  @ApiProperty({
+    description: 'Porte da empresa',
+    enum: CompanySize,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(CompanySize, { message: 'Porte inválido' })
+  porte?: CompanySize;
+
+  @ApiProperty({
+    description: 'ID do departamento',
+    required: false,
+  })
+  @IsOptional()
+  @IsInt({ message: 'ID do departamento deve ser um número inteiro' })
+  departmentId?: number;
+
+  @ApiProperty({
+    description: 'Procuração PJ ECAC',
+    enum: EcacPJ,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(EcacPJ, { message: 'Valor ECAC PJ inválido' })
+  porcPJEcac?: EcacPJ;
+
+  @ApiProperty({
+    description: 'Procuração PF ECAC',
+    enum: EcacPF,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(EcacPF, { message: 'Valor ECAC PF inválido' })
+  procPFEcac?: EcacPF;
+
+  @ApiProperty({
+    description: 'Campos personalizados (JSON) - apenas para campos dinâmicos',
+    required: false,
+    example: {
+      campoPersonalizado1: 'valor1',
+      campoPersonalizado2: 'valor2'
+    }
+  })
+  @IsOptional()
+  @IsObject({ message: 'Campos personalizados deve ser um objeto' })
+  customFields?: Record<string, any>;
 }

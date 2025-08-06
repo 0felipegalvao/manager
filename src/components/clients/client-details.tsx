@@ -3,7 +3,7 @@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Edit, Trash2, MapPin, Phone, Mail, Building2, FileText, Calendar, History } from "lucide-react"
+import { Edit, Trash2, MapPin, Phone, Mail, Building2, FileText, Calendar, History, User, CreditCard, Clock, Tag, MessageSquare } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -70,6 +70,52 @@ export function ClientDetails({ client, open, onOpenChange, onEdit, onDelete }: 
       MEI: 'MEI',
     };
     return regimes[regime as keyof typeof regimes] || regime;
+  };
+
+  // Funções auxiliares para campos personalizados
+  const formatCustomDate = (dateStr: string | undefined) => {
+    if (!dateStr) return 'Não informado';
+    try {
+      // Se já está no formato ISO (YYYY-MM-DD)
+      if (dateStr.includes('-') && dateStr.length === 10) {
+        const [year, month, day] = dateStr.split('-');
+        return `${day}/${month}/${year}`;
+      }
+      // Se está no formato brasileiro (DD/MM/YYYY)
+      if (dateStr.includes('/')) {
+        return dateStr;
+      }
+      return dateStr;
+    } catch {
+      return dateStr || 'Não informado';
+    }
+  };
+
+  const formatCustomField = (value: any) => {
+    if (value === null || value === undefined || value === '') {
+      return 'Não informado';
+    }
+    if (typeof value === 'boolean') {
+      return value ? 'Sim' : 'Não';
+    }
+    return String(value);
+  };
+
+  const getCustomFieldLabel = (key: string) => {
+    const labels: Record<string, string> = {
+      cpf: 'CPF',
+      codigoSimples: 'Código Simples',
+      inscricaoEstadual: 'Inscrição Estadual',
+      inicioAtividade: 'Início Atividade',
+      inicioEscritorio: 'Início Escritório',
+      dataSituacao: 'Data Situação',
+      porte: 'Porte',
+      departamento: 'Departamento',
+      porcPJEcac: 'Porc PJ ECAC',
+      procPFEcac: 'Proc PF ECAC',
+      observacoes: 'Observações'
+    };
+    return labels[key] || key.charAt(0).toUpperCase() + key.slice(1);
   };
 
   return (
@@ -225,31 +271,236 @@ export function ClientDetails({ client, open, onOpenChange, onEdit, onDelete }: 
             </CardContent>
           </Card>
 
-          {/* Campos Personalizados */}
-          {client.customFields && Object.keys(client.customFields).length > 0 && (
+          {/* Dados Fiscais e Específicos do Sistema */}
+          {(client.cpf || client.codigoSimples || client.porte || client.department) && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Campos Personalizados
+                  <CreditCard className="h-5 w-5" />
+                  Dados Fiscais e Sistema
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  {Object.entries(client.customFields).map(([key, value]) => (
-                    <div key={key}>
-                      <label className="text-sm font-medium text-muted-foreground">
-                        Campo {key}
-                      </label>
-                      <p className="font-medium">
-                        {typeof value === 'boolean' ? (value ? 'Sim' : 'Não') : String(value)}
-                      </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {client.cpf && (
+                    <div className="flex items-center gap-3">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">CPF</label>
+                        <p className="font-medium">{client.cpf}</p>
+                      </div>
                     </div>
-                  ))}
+                  )}
+                  {client.codigoSimples && (
+                    <div className="flex items-center gap-3">
+                      <Tag className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Código Simples</label>
+                        <p className="font-medium">{client.codigoSimples}</p>
+                      </div>
+                    </div>
+                  )}
+                  {client.porte && (
+                    <div className="flex items-center gap-3">
+                      <Building className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Porte</label>
+                        <p className="font-medium">{client.porte}</p>
+                      </div>
+                    </div>
+                  )}
+                  {client.department && (
+                    <div className="flex items-center gap-3">
+                      <Briefcase className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Departamento</label>
+                        <p className="font-medium">{client.department.name}</p>
+                      </div>
+                    </div>
+                  )}
+                  {client.porcPJEcac && (
+                    <div className="flex items-center gap-3">
+                      <FileCheck className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Proc PJ ECAC</label>
+                        <p className="font-medium">{client.porcPJEcac}</p>
+                      </div>
+                    </div>
+                  )}
+                  {client.procPFEcac && (
+                    <div className="flex items-center gap-3">
+                      <FileCheck className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Proc PF ECAC</label>
+                        <p className="font-medium">{client.procPFEcac}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
           )}
+
+              {/* Datas */}
+              {(client.customFields.inicioAtividade || client.customFields.inicioEscritorio || client.customFields.dataSituacao) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Clock className="h-5 w-5" />
+                      Datas Importantes
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {client.customFields.inicioAtividade && (
+                        <div className="flex items-center gap-3">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">Início Atividade</label>
+                            <p className="font-medium">{formatCustomDate(client.customFields.inicioAtividade)}</p>
+                          </div>
+                        </div>
+                      )}
+                      {client.customFields.inicioEscritorio && (
+                        <div className="flex items-center gap-3">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">Início Escritório</label>
+                            <p className="font-medium">{formatCustomDate(client.customFields.inicioEscritorio)}</p>
+                          </div>
+                        </div>
+                      )}
+                      {client.customFields.dataSituacao && (
+                        <div className="flex items-center gap-3">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">Data Situação</label>
+                            <p className="font-medium">{formatCustomDate(client.customFields.dataSituacao)}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Classificações */}
+              {(client.customFields.porte || client.customFields.departamento) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Tag className="h-5 w-5" />
+                      Classificações
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {client.customFields.porte && (
+                        <div className="flex items-center gap-3">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">Porte</label>
+                            <p className="font-medium">{formatCustomField(client.customFields.porte)}</p>
+                          </div>
+                        </div>
+                      )}
+                      {client.customFields.departamento && (
+                        <div className="flex items-center gap-3">
+                          <Tag className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">Departamento</label>
+                            <p className="font-medium">{formatCustomField(client.customFields.departamento)}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* ECAC */}
+              {(client.customFields.porcPJEcac || client.customFields.procPFEcac) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      ECAC
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {client.customFields.porcPJEcac && (
+                        <div className="flex items-center gap-3">
+                          <CreditCard className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">Porc PJ ECAC</label>
+                            <p className="font-medium">{formatCustomField(client.customFields.porcPJEcac)}</p>
+                          </div>
+                        </div>
+                      )}
+                      {client.customFields.procPFEcac && (
+                        <div className="flex items-center gap-3">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">Proc PF ECAC</label>
+                            <p className="font-medium">{formatCustomField(client.customFields.procPFEcac)}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Observações */}
+              {client.customFields.observacoes && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5" />
+                      Observações
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-start gap-3">
+                      <MessageSquare className="h-4 w-4 text-muted-foreground mt-1" />
+                      <div className="flex-1">
+                        <label className="text-sm font-medium text-muted-foreground">Observações</label>
+                        <p className="font-medium whitespace-pre-wrap">{formatCustomField(client.customFields.observacoes)}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Outros Campos Personalizados */}
+              {Object.entries(client.customFields).filter(([key]) =>
+                !['cpf', 'codigoSimples', 'inscricaoEstadual', 'inicioAtividade', 'inicioEscritorio', 'dataSituacao', 'porte', 'departamento', 'porcPJEcac', 'procPFEcac', 'observacoes'].includes(key)
+              ).length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Outros Campos
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {Object.entries(client.customFields)
+                        .filter(([key]) => !['cpf', 'codigoSimples', 'inscricaoEstadual', 'inicioAtividade', 'inicioEscritorio', 'dataSituacao', 'porte', 'departamento', 'porcPJEcac', 'procPFEcac', 'observacoes'].includes(key))
+                        .map(([key, value]) => (
+                          <div key={key} className="flex items-center gap-3">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">{getCustomFieldLabel(key)}</label>
+                              <p className="font-medium">{formatCustomField(value)}</p>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
           {/* Histórico */}
           <Card>

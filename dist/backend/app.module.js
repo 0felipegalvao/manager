@@ -10,6 +10,7 @@ exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const schedule_1 = require("@nestjs/schedule");
+const platform_express_1 = require("@nestjs/platform-express");
 const auth_module_1 = require("./auth/auth.module");
 const users_module_1 = require("./users/users.module");
 const clients_module_1 = require("./clients/clients.module");
@@ -17,6 +18,8 @@ const documents_module_1 = require("./documents/documents.module");
 const fiscal_module_1 = require("./fiscal/fiscal.module");
 const notifications_module_1 = require("./notifications/notifications.module");
 const reports_module_1 = require("./reports/reports.module");
+const tasks_module_1 = require("./tasks/tasks.module");
+const audit_module_1 = require("./audit/audit.module");
 const email_service_1 = require("./common/services/email.service");
 const scheduler_service_1 = require("./common/services/scheduler.service");
 const prisma_service_1 = require("./common/prisma.service");
@@ -31,6 +34,12 @@ exports.AppModule = AppModule = __decorate([
                 envFilePath: '.env',
             }),
             schedule_1.ScheduleModule.forRoot(),
+            platform_express_1.MulterModule.register({
+                dest: './uploads',
+                limits: {
+                    fileSize: 10 * 1024 * 1024, // 10MB
+                },
+            }),
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
             clients_module_1.ClientsModule,
@@ -38,6 +47,8 @@ exports.AppModule = AppModule = __decorate([
             fiscal_module_1.FiscalModule,
             notifications_module_1.NotificationsModule,
             reports_module_1.ReportsModule,
+            tasks_module_1.TasksModule,
+            audit_module_1.AuditModule,
         ],
         providers: [email_service_1.EmailService, scheduler_service_1.SchedulerService, prisma_service_1.PrismaService],
         controllers: [],

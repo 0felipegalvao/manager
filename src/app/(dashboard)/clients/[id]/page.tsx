@@ -2,10 +2,11 @@
 
 import { useRouter, useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Edit, Trash2, MapPin, Phone, Mail, Building2, FileText, Calendar, History } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, MapPin, Phone, Mail, Building2, FileText, Calendar, History, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -34,27 +35,44 @@ export default function ClientDetailsPage() {
         const { clientsApi } = await import('@/lib/api');
         const clientData = await clientsApi.getById(Number(params.id));
 
-        // Mapear dados do backend para o formato do frontend
+        // Mapear dados do backend para o formato do frontend (nova estrutura)
         const mappedClient = {
           id: clientData.id.toString(),
           razaoSocial: clientData.razaoSocial,
           nomeFantasia: clientData.nomeFantasia || '',
-          documento: clientData.cnpj,
+          cnpj: clientData.cnpj,
+          cpf: clientData.cpf || '',
           inscricaoEstadual: clientData.inscricaoEstadual || '',
           inscricaoMunicipal: clientData.inscricaoMunicipal || '',
-          tiposPessoa: 'JURIDICA' as const,
-          regimeTributario: clientData.taxRegime,
+          taxRegime: clientData.taxRegime,
           cep: clientData.cep,
-          logradouro: clientData.endereco,
+          endereco: clientData.endereco,
           numero: clientData.numero,
           complemento: clientData.complemento || '',
           bairro: clientData.bairro,
           cidade: clientData.cidade,
           estado: clientData.estado,
           telefone: clientData.telefone || '',
+          celular: clientData.celular || '',
           email: clientData.email || '',
+          emailContador: clientData.emailContador || '',
           status: clientData.status,
-          tags: [],
+          dataAbertura: clientData.dataAbertura || '',
+          dataSituacao: clientData.dataSituacao || '',
+          inicioAtividade: clientData.inicioAtividade || '',
+          inicioEscritorio: clientData.inicioEscritorio || '',
+          codigoSimples: clientData.codigoSimples || '',
+          porte: clientData.porte || '',
+          porcPJEcac: clientData.porcPJEcac || '',
+          procPFEcac: clientData.procPFEcac || '',
+          departmentId: clientData.departmentId || null,
+          capitalSocial: clientData.capitalSocial || 0,
+          valorMensal: clientData.valorMensal || 0,
+          dataVencimento: clientData.dataVencimento || '',
+          atividadePrincipal: clientData.atividadePrincipal || '',
+          observacoes: clientData.observacoes || '',
+          tags: [], // Array vazio por enquanto
+          customFields: clientData.customFields || {},
           createdAt: clientData.createdAt,
           updatedAt: clientData.updatedAt,
         };
@@ -218,7 +236,7 @@ export default function ClientDetailsPage() {
         </div>
       </header>
       
-      <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
+      <div className="flex flex-1 flex-col gap-6 p-4 pt-0 max-w-none">
         {/* Header da página */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -238,12 +256,12 @@ export default function ClientDetailsPage() {
                   {client.status}
                 </Badge>
                 <Badge variant="outline">
-                  {client.tiposPessoa === 'JURIDICA' ? 'PJ' : 'PF'}
+                  PJ
                 </Badge>
               </div>
               <p className="text-muted-foreground">
                 {client.nomeFantasia && `${client.nomeFantasia} • `}
-                {formatDocument(client.documento, client.tiposPessoa)}
+                {formatDocument(client.cnpj, 'JURIDICA')}
               </p>
             </div>
           </div>
@@ -260,174 +278,359 @@ export default function ClientDetailsPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 max-w-6xl">
-          {/* Grid com 2 colunas para informações principais */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Informações Básicas */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Building2 className="h-4 w-4" />
-                  Informações Básicas
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-1 gap-3">
-                  <div className="flex justify-between items-start">
-                    <span className="text-sm text-muted-foreground">Razão Social:</span>
-                    <span className="font-medium text-right max-w-[60%]">{client.razaoSocial}</span>
+        <div className="space-y-6">
+          {/* Tabs modernas para organizar as informações */}
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="overview" className="flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                Visão Geral
+              </TabsTrigger>
+              <TabsTrigger value="contact" className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                Contato
+              </TabsTrigger>
+              <TabsTrigger value="financial" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Financeiro
+              </TabsTrigger>
+              <TabsTrigger value="additional" className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Adicional
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Tab 1: Visão Geral */}
+            <TabsContent value="overview" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5" />
+                    Informações Básicas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="space-y-4">
+                      <div>
+                        <span className="text-xs text-muted-foreground uppercase tracking-wide">Razão Social</span>
+                        <p className="font-medium">{client.razaoSocial}</p>
+                      </div>
+
+                      {client.nomeFantasia && (
+                        <div>
+                          <span className="text-xs text-muted-foreground uppercase tracking-wide">Nome Fantasia</span>
+                          <p className="font-medium">{client.nomeFantasia}</p>
+                        </div>
+                      )}
+
+                      <div>
+                        <span className="text-xs text-muted-foreground uppercase tracking-wide">CNPJ</span>
+                        <p className="font-mono text-sm font-medium">
+                          {formatDocument(client.cnpj, 'JURIDICA')}
+                        </p>
+                      </div>
+
+                      <div>
+                        <span className="text-xs text-muted-foreground uppercase tracking-wide">Regime Tributário</span>
+                        <p className="font-medium">{getRegimeLabel(client.taxRegime)}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      {client.inscricaoEstadual && (
+                        <div>
+                          <span className="text-xs text-muted-foreground uppercase tracking-wide">Inscrição Estadual</span>
+                          <p className="font-medium">{client.inscricaoEstadual}</p>
+                        </div>
+                      )}
+
+                      {client.inscricaoMunicipal && (
+                        <div>
+                          <span className="text-xs text-muted-foreground uppercase tracking-wide">Inscrição Municipal</span>
+                          <p className="font-medium">{client.inscricaoMunicipal}</p>
+                        </div>
+                      )}
+
+                      {client.porte && (
+                        <div>
+                          <span className="text-xs text-muted-foreground uppercase tracking-wide">Porte</span>
+                          <p className="font-medium">{client.porte}</p>
+                        </div>
+                      )}
+
+                      {client.codigoSimples && (
+                        <div>
+                          <span className="text-xs text-muted-foreground uppercase tracking-wide">Código Simples</span>
+                          <p className="font-medium">{client.codigoSimples}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-4">
+                      {client.dataAbertura && (
+                        <div>
+                          <span className="text-xs text-muted-foreground uppercase tracking-wide">Data de Abertura</span>
+                          <p className="font-medium">
+                            {new Date(client.dataAbertura).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                      )}
+
+                      {client.inicioAtividade && (
+                        <div>
+                          <span className="text-xs text-muted-foreground uppercase tracking-wide">Início da Atividade</span>
+                          <p className="font-medium">
+                            {new Date(client.inicioAtividade).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                      )}
+
+                      {client.inicioEscritorio && (
+                        <div>
+                          <span className="text-xs text-muted-foreground uppercase tracking-wide">Início no Escritório</span>
+                          <p className="font-medium">
+                            {new Date(client.inicioEscritorio).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {client.nomeFantasia && (
-                    <div className="flex justify-between items-start">
-                      <span className="text-sm text-muted-foreground">Nome Fantasia:</span>
-                      <span className="font-medium text-right max-w-[60%]">{client.nomeFantasia}</span>
+                  {client.tags && client.tags.length > 0 && (
+                    <div className="pt-4 border-t mt-6">
+                      <span className="text-xs text-muted-foreground uppercase tracking-wide">Tags</span>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {client.tags.map((tag: string) => (
+                          <Badge key={tag} variant="secondary" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">
-                      {client.tiposPessoa === 'JURIDICA' ? 'CNPJ:' : 'CPF:'}
-                    </span>
-                    <span className="font-medium font-mono text-sm">
-                      {formatDocument(client.documento, client.tiposPessoa)}
-                    </span>
-                  </div>
-
-                  {client.inscricaoEstadual && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Insc. Estadual:</span>
-                      <span className="font-medium">{client.inscricaoEstadual}</span>
+            {/* Tab 2: Contato */}
+            <TabsContent value="contact" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Endereço */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MapPin className="h-5 w-5" />
+                      Endereço
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <span className="text-xs text-muted-foreground uppercase tracking-wide">Logradouro</span>
+                      <p className="font-medium">
+                        {client.endereco}, {client.numero}
+                        {client.complemento && `, ${client.complemento}`}
+                      </p>
                     </div>
-                  )}
 
-                  {client.inscricaoMunicipal && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Insc. Municipal:</span>
-                      <span className="font-medium">{client.inscricaoMunicipal}</span>
+                    <div>
+                      <span className="text-xs text-muted-foreground uppercase tracking-wide">Bairro</span>
+                      <p className="font-medium">{client.bairro}</p>
                     </div>
-                  )}
 
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Regime Tributário:</span>
-                    <span className="font-medium">{getRegimeLabel(client.regimeTributario)}</span>
-                  </div>
-                </div>
-
-                {client.tags.length > 0 && (
-                  <div className="pt-2 border-t">
-                    <div className="flex flex-wrap gap-1">
-                      {client.tags.map((tag: string) => (
-                        <Badge key={tag} variant="secondary" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
+                    <div>
+                      <span className="text-xs text-muted-foreground uppercase tracking-wide">Cidade/Estado</span>
+                      <p className="font-medium">{client.cidade}/{client.estado}</p>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
 
-            {/* Endereço e Contato */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <MapPin className="h-4 w-4" />
-                  Endereço & Contato
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="space-y-2">
-                  <div>
-                    <p className="font-medium text-sm">
-                      {client.logradouro}, {client.numero}
-                      {client.complemento && `, ${client.complemento}`}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {client.bairro} • {client.cidade}/{client.estado}
-                    </p>
-                    <p className="text-sm text-muted-foreground font-mono">
-                      CEP: {formatCep(client.cep)}
-                    </p>
-                  </div>
-                </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground uppercase tracking-wide">CEP</span>
+                      <p className="font-mono text-sm font-medium">{formatCep(client.cep)}</p>
+                    </div>
+                  </CardContent>
+                </Card>
 
-                {(client.telefone || client.email) && (
-                  <div className="pt-2 border-t space-y-2">
+                {/* Contato */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Phone className="h-5 w-5" />
+                      Contato
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     {client.telefone && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{client.telefone}</span>
+                      <div>
+                        <span className="text-xs text-muted-foreground uppercase tracking-wide">Telefone</span>
+                        <p className="font-medium">{client.telefone}</p>
                       </div>
                     )}
+
+                    {client.celular && (
+                      <div>
+                        <span className="text-xs text-muted-foreground uppercase tracking-wide">Celular</span>
+                        <p className="font-medium">{client.celular}</p>
+                      </div>
+                    )}
+
                     {client.email && (
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{client.email}</span>
+                      <div>
+                        <span className="text-xs text-muted-foreground uppercase tracking-wide">E-mail</span>
+                        <p className="font-medium">{client.email}</p>
+                      </div>
+                    )}
+
+                    {client.emailContador && (
+                      <div>
+                        <span className="text-xs text-muted-foreground uppercase tracking-wide">E-mail Contador</span>
+                        <p className="font-medium">{client.emailContador}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* Tab 3: Financeiro */}
+            <TabsContent value="financial" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Dados Financeiros
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {client.capitalSocial && client.capitalSocial > 0 && (
+                      <div className="p-4 border rounded-lg">
+                        <span className="text-xs text-muted-foreground uppercase tracking-wide">Capital Social</span>
+                        <p className="font-bold text-lg text-green-600">
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                          }).format(client.capitalSocial)}
+                        </p>
+                      </div>
+                    )}
+
+                    {client.valorMensal && client.valorMensal > 0 && (
+                      <div className="p-4 border rounded-lg">
+                        <span className="text-xs text-muted-foreground uppercase tracking-wide">Valor Mensal</span>
+                        <p className="font-bold text-lg text-blue-600">
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                          }).format(client.valorMensal)}
+                        </p>
+                      </div>
+                    )}
+
+                    {client.dataVencimento && (
+                      <div className="p-4 border rounded-lg">
+                        <span className="text-xs text-muted-foreground uppercase tracking-wide">Data de Vencimento</span>
+                        <p className="font-bold text-lg">
+                          {new Date(client.dataVencimento).toLocaleDateString('pt-BR')}
+                        </p>
                       </div>
                     )}
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          {/* Campos Personalizados */}
-          {client.customFields && Object.keys(client.customFields).length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <FileText className="h-4 w-4" />
-                  Informações Adicionais
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {Object.entries(client.customFields).map(([key, value]) => (
-                  <div key={key} className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground capitalize">
-                      {key.replace('_', ' ')}:
-                    </span>
-                    <span className="font-medium">
-                      {typeof value === 'boolean' ? (value ? 'Sim' : 'Não') : String(value)}
-                    </span>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
+            {/* Tab 4: Adicional */}
+            <TabsContent value="additional" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Atividade e Procurações */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      Atividade e Procurações
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {client.atividadePrincipal && (
+                      <div>
+                        <span className="text-xs text-muted-foreground uppercase tracking-wide">Atividade Principal</span>
+                        <p className="font-medium">{client.atividadePrincipal}</p>
+                      </div>
+                    )}
 
-          {/* Histórico */}
+                    {client.porcPJEcac && (
+                      <div>
+                        <span className="text-xs text-muted-foreground uppercase tracking-wide">Procuração PJ ECAC</span>
+                        <p className="font-medium">{client.porcPJEcac}</p>
+                      </div>
+                    )}
+
+                    {client.procPFEcac && (
+                      <div>
+                        <span className="text-xs text-muted-foreground uppercase tracking-wide">Procuração PF ECAC</span>
+                        <p className="font-medium">{client.procPFEcac}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Observações */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Observações
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {client.observacoes ? (
+                      <div>
+                        <p className="font-medium text-sm leading-relaxed">{client.observacoes}</p>
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-sm">Nenhuma observação cadastrada.</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+          </Tabs>
+
+          {/* Histórico - Fora do accordion */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
-                <History className="h-4 w-4" />
+                <History className="h-5 w-5" />
                 Histórico
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Criado em:</span>
-                <span className="font-medium text-sm">
-                  {new Date(client.createdAt).toLocaleDateString('pt-BR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Última atualização:</span>
-                <span className="font-medium text-sm">
-                  {new Date(client.updatedAt).toLocaleDateString('pt-BR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Criado em</span>
+                  <p className="font-medium">
+                    {new Date(client.createdAt).toLocaleDateString('pt-BR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Última atualização</span>
+                  <p className="font-medium">
+                    {new Date(client.updatedAt).toLocaleDateString('pt-BR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>

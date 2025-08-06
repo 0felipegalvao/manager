@@ -31,6 +31,9 @@ export class ClientsService {
             email: true,
           },
         },
+        department: true,
+        partners: true,
+        clientContacts: true,
         contacts: true,
         _count: {
           select: {
@@ -58,6 +61,9 @@ export class ClientsService {
             email: true,
           },
         },
+        department: true,
+        partners: true,
+        clientContacts: true,
         contacts: true,
         _count: {
           select: {
@@ -84,6 +90,13 @@ export class ClientsService {
             email: true,
           },
         },
+        department: true,
+        partners: true,
+        clientContacts: true,
+        taxRegimeHistory: {
+          orderBy: { startDate: 'desc' },
+        },
+        registrationStatus: true,
         contacts: true,
         documents: {
           orderBy: { createdAt: 'desc' },
@@ -150,6 +163,9 @@ export class ClientsService {
             email: true,
           },
         },
+        department: true,
+        partners: true,
+        clientContacts: true,
         contacts: true,
         _count: {
           select: {

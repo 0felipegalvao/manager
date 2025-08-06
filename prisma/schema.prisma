@@ -36,6 +36,25 @@ enum TaxRegime {
   MEI
 }
 
+// Enum para porte da empresa
+enum CompanySize {
+  ME
+  EPP
+  GRANDE
+}
+
+// Enum para ECAC PJ
+enum EcacPJ {
+  SIM
+  NAO
+}
+
+// Enum para ECAC PF
+enum EcacPF {
+  SIM
+  NAO
+}
+
 // Enum para tipos de documentos
 enum DocumentType {
   NOTA_FISCAL
@@ -130,12 +149,32 @@ model Client {
   valorMensal          Decimal?    @db.Decimal(10,2)
   observacoes          String?
 
+  // Campos específicos do sistema contábil
+  cpf                  String?
+  codigoSimples        String?
+  inicioAtividade      DateTime?
+  inicioEscritorio     DateTime?
+  dataSituacao         DateTime?
+  porte                CompanySize?
+  departmentId         Int?
+  porcPJEcac           EcacPJ?
+  procPFEcac           EcacPF?
+
+  // Campos personalizados (para campos dinâmicos)
+  customFields         Json?
+
   createdAt            DateTime    @default(now())
   updatedAt            DateTime    @updatedAt
 
   // Relacionamentos
   userId               Int
   user                 User        @relation(fields: [userId], references: [id])
+  department           Department? @relation(fields: [departmentId], references: [id])
+  clientDepartments    ClientDepartment[] // Relação many-to-many com departamentos
+  partners             Partner[]
+  clientContacts       ClientContact[]
+  taxRegimeHistory     TaxRegimeHistory[]
+  registrationStatus   RegistrationStatus?
   documents            Document[]
   obligations          Obligation[]
   tasks                Task[]
@@ -143,6 +182,23 @@ model Client {
   auditLogs            AuditLog[]
 
   @@map("clients")
+}
+
+// Modelo de Sócios/Partners
+model Partner {
+  id           Int      @id @default(autoincrement())
+  name         String
+  cpf          String?
+  participacao Decimal? @db.Decimal(5,2) // Percentual de participação
+  qualificacao String?  // Qualificação do sócio
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relacionamentos
+  clientId     Int
+  client       Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("partners")
 }
 
 // Modelo de Contatos dos Clientes
@@ -161,6 +217,80 @@ model Contact {
   client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@map("contacts")
+}
+
+// Modelo de Contatos Adicionais dos Clientes
+model ClientContact {
+  id          Int      @id @default(autoincrement())
+  name        String
+  email       String?
+  phone       String?
+  cellphone   String?
+  position    String?
+  department  String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  clientId    Int
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("client_contacts")
+}
+
+// Modelo de Histórico de Regimes Tributários
+model TaxRegimeHistory {
+  id            Int       @id @default(autoincrement())
+  taxRegime     TaxRegime
+  startDate     DateTime
+  endDate       DateTime?
+  reason        String?   // Motivo da mudança
+  observations  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relacionamentos
+  clientId      Int
+  client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("tax_regime_history")
+}
+
+// Modelo de Departamentos
+model Department {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  clients           Client[] // Relação 1:N (departamento principal)
+  clientDepartments ClientDepartment[] // Relação many-to-many
+
+  @@map("departments")
+}
+
+// Modelo de Status de Registros
+model RegistrationStatus {
+  id                Int      @id @default(autoincrement())
+  federalStatus     String?  // Status do registro federal
+  stateStatus       String?  // Status do registro estadual
+  municipalStatus   String?  // Status do registro municipal
+  federalDate       DateTime? // Data do registro federal
+  stateDate         DateTime? // Data do registro estadual
+  municipalDate     DateTime? // Data do registro municipal
+  observations      String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relacionamentos
+  clientId          Int      @unique
+  client            Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("registration_status")
 }
 
 // Modelo de Documentos
