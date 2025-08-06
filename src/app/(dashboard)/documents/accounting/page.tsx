@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Upload, Search, Filter, Download, Eye, MoreHorizontal, FileText, Image, File, Calendar } from 'lucide-react';
+import { Upload, Search, Filter, Download, Eye, MoreHorizontal, FileText, Calculator, TrendingUp, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,82 +32,117 @@ import {
   BreadcrumbItem,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbLink,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
 // Dados mock para demonstração
-const mockDocuments = [
+const mockAccountingDocs = [
   {
     id: 1,
-    name: 'Contrato Social - Empresa ABC',
-    type: 'PDF',
-    size: '2.4 MB',
+    name: 'Balanço Patrimonial 2023',
+    type: 'Balanço',
     client: 'Empresa ABC Ltda',
-    category: 'Contrato',
+    period: '2023',
+    size: '2.1 MB',
     uploadDate: '2024-01-15',
-    status: 'Aprovado'
+    status: 'Aprovado',
+    category: 'Demonstrativo'
   },
   {
     id: 2,
-    name: 'Balanço Patrimonial 2023',
-    type: 'Excel',
-    size: '1.8 MB',
+    name: 'DRE - Dezembro 2023',
+    type: 'DRE',
     client: 'Tech Solutions S.A.',
-    category: 'Financeiro',
+    period: '12/2023',
+    size: '856 KB',
     uploadDate: '2024-01-10',
-    status: 'Pendente'
+    status: 'Pendente',
+    category: 'Demonstrativo'
   },
   {
     id: 3,
-    name: 'Certidão Negativa',
-    type: 'PDF',
-    size: '856 KB',
-    client: 'João Silva',
-    category: 'Certidão',
+    name: 'Livro Diário - Janeiro 2024',
+    type: 'Livro Diário',
+    client: 'Comércio XYZ Ltda',
+    period: '01/2024',
+    size: '4.2 MB',
     uploadDate: '2024-01-08',
-    status: 'Aprovado'
+    status: 'Aprovado',
+    category: 'Escrituração'
   },
   {
     id: 4,
-    name: 'Nota Fiscal Janeiro',
-    type: 'XML',
-    size: '124 KB',
-    client: 'Empresa ABC Ltda',
-    category: 'Fiscal',
+    name: 'Balancete de Verificação',
+    type: 'Balancete',
+    client: 'João Silva ME',
+    period: '01/2024',
+    size: '1.3 MB',
     uploadDate: '2024-01-05',
-    status: 'Processando'
+    status: 'Revisão',
+    category: 'Demonstrativo'
+  },
+  {
+    id: 5,
+    name: 'SPED Contábil 2023',
+    type: 'SPED',
+    client: 'Empresa ABC Ltda',
+    period: '2023',
+    size: '15.7 MB',
+    uploadDate: '2024-01-03',
+    status: 'Aprovado',
+    category: 'Obrigatório'
   },
 ];
 
-const getFileIcon = (type: string) => {
-  switch (type.toLowerCase()) {
-    case 'pdf':
+const getDocIcon = (type: string) => {
+  switch (type) {
+    case 'Balanço':
+      return <TrendingUp className="h-4 w-4 text-blue-500" />;
+    case 'DRE':
+      return <Calculator className="h-4 w-4 text-green-500" />;
+    case 'Livro Diário':
+      return <FileText className="h-4 w-4 text-purple-500" />;
+    case 'Balancete':
+      return <Calendar className="h-4 w-4 text-orange-500" />;
+    case 'SPED':
       return <FileText className="h-4 w-4 text-red-500" />;
-    case 'excel':
-      return <File className="h-4 w-4 text-green-500" />;
-    case 'xml':
-      return <File className="h-4 w-4 text-blue-500" />;
-    case 'image':
-      return <Image className="h-4 w-4 text-purple-500" />;
     default:
-      return <File className="h-4 w-4 text-gray-500" />;
+      return <FileText className="h-4 w-4 text-gray-500" />;
   }
 };
 
-export default function DocumentsPage() {
+const getStatusVariant = (status: string) => {
+  switch (status) {
+    case 'Aprovado':
+      return 'default';
+    case 'Pendente':
+      return 'secondary';
+    case 'Revisão':
+      return 'outline';
+    default:
+      return 'secondary';
+  }
+};
+
+export default function AccountingDocumentsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [documents] = useState(mockDocuments);
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [documents] = useState(mockAccountingDocs);
 
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         doc.client.toLowerCase().includes(searchTerm.toLowerCase());
+                         doc.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         doc.type.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || doc.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    const matchesStatus = selectedStatus === 'all' || doc.status === selectedStatus;
+    return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  const categories = ['Contrato', 'Financeiro', 'Certidão', 'Fiscal'];
+  const categories = ['Demonstrativo', 'Escrituração', 'Obrigatório'];
   const totalSize = documents.reduce((acc, doc) => {
     const size = parseFloat(doc.size.replace(/[^\d.]/g, ''));
     return acc + size;
@@ -125,13 +160,17 @@ export default function DocumentsPage() {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbPage>Documentos</BreadcrumbPage>
+                <BreadcrumbLink href="/documents">Documentos</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Documentos Contábeis</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
         </div>
       </header>
-
+      
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         {/* Header com estatísticas */}
         <div className="grid gap-4 md:grid-cols-4">
@@ -143,50 +182,50 @@ export default function DocumentsPage() {
             <CardContent>
               <div className="text-2xl font-bold">{documents.length}</div>
               <p className="text-xs text-muted-foreground">
-                +3 novos esta semana
+                +2 novos esta semana
               </p>
             </CardContent>
           </Card>
-
+          
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Espaço Utilizado</CardTitle>
-              <File className="h-4 w-4 text-muted-foreground" />
+              <Calculator className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalSize.toFixed(1)} MB</div>
               <p className="text-xs text-muted-foreground">
-                de 1GB disponível
+                Documentos contábeis
               </p>
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {documents.filter(d => d.status === 'Pendente').length}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Aguardando aprovação
-              </p>
-            </CardContent>
-          </Card>
-
+          
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Aprovados</CardTitle>
-              <Badge variant="default" className="h-4 w-4 p-0"></Badge>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold text-green-500">
                 {documents.filter(d => d.status === 'Aprovado').length}
               </div>
               <p className="text-xs text-muted-foreground">
                 Documentos validados
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Em Revisão</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-500">
+                {documents.filter(d => d.status === 'Revisão' || d.status === 'Pendente').length}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Aguardando análise
               </p>
             </CardContent>
           </Card>
@@ -197,9 +236,9 @@ export default function DocumentsPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Gestão de Documentos</CardTitle>
+                <CardTitle>Documentos Contábeis</CardTitle>
                 <CardDescription>
-                  Centralize e organize todos os documentos dos seus clientes
+                  Demonstrativos financeiros, livros contábeis e documentos obrigatórios
                 </CardDescription>
               </div>
               <Button>
@@ -213,7 +252,7 @@ export default function DocumentsPage() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar documentos..."
+                  placeholder="Buscar documentos contábeis..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -232,6 +271,17 @@ export default function DocumentsPage() {
                   ))}
                 </SelectContent>
               </Select>
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="Aprovado">Aprovado</SelectItem>
+                  <SelectItem value="Pendente">Pendente</SelectItem>
+                  <SelectItem value="Revisão">Revisão</SelectItem>
+                </SelectContent>
+              </Select>
               <Button variant="outline">
                 <Filter className="h-4 w-4 mr-2" />
                 Filtros
@@ -245,9 +295,9 @@ export default function DocumentsPage() {
                   <TableRow>
                     <TableHead>Documento</TableHead>
                     <TableHead>Cliente</TableHead>
+                    <TableHead>Período</TableHead>
                     <TableHead>Categoria</TableHead>
                     <TableHead>Tamanho</TableHead>
-                    <TableHead>Data Upload</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
@@ -257,7 +307,7 @@ export default function DocumentsPage() {
                     <TableRow key={document.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          {getFileIcon(document.type)}
+                          {getDocIcon(document.type)}
                           <div>
                             <div className="font-medium">{document.name}</div>
                             <div className="text-sm text-muted-foreground">{document.type}</div>
@@ -265,20 +315,13 @@ export default function DocumentsPage() {
                         </div>
                       </TableCell>
                       <TableCell>{document.client}</TableCell>
+                      <TableCell className="font-mono text-sm">{document.period}</TableCell>
                       <TableCell>
                         <Badge variant="outline">{document.category}</Badge>
                       </TableCell>
                       <TableCell className="text-sm">{document.size}</TableCell>
-                      <TableCell className="text-sm">
-                        {new Date(document.uploadDate).toLocaleDateString('pt-BR')}
-                      </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={
-                            document.status === 'Aprovado' ? 'default' :
-                            document.status === 'Pendente' ? 'secondary' : 'outline'
-                          }
-                        >
+                        <Badge variant={getStatusVariant(document.status)}>
                           {document.status}
                         </Badge>
                       </TableCell>
@@ -299,6 +342,7 @@ export default function DocumentsPage() {
                               Download
                             </DropdownMenuItem>
                             <DropdownMenuItem>Editar</DropdownMenuItem>
+                            <DropdownMenuItem>Aprovar</DropdownMenuItem>
                             <DropdownMenuItem className="text-red-600">
                               Excluir
                             </DropdownMenuItem>
@@ -312,7 +356,62 @@ export default function DocumentsPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Seção de templates e modelos */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Templates e Modelos</CardTitle>
+            <CardDescription>
+              Modelos pré-configurados para documentos contábeis
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="p-4 border rounded-lg">
+                <div className="flex items-center gap-3 mb-2">
+                  <TrendingUp className="h-5 w-5 text-blue-500" />
+                  <h3 className="font-medium">Balanço Patrimonial</h3>
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Template padrão para balanço patrimonial
+                </p>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Baixar Template
+                </Button>
+              </div>
+              
+              <div className="p-4 border rounded-lg">
+                <div className="flex items-center gap-3 mb-2">
+                  <Calculator className="h-5 w-5 text-green-500" />
+                  <h3 className="font-medium">DRE</h3>
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Demonstração do Resultado do Exercício
+                </p>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Baixar Template
+                </Button>
+              </div>
+              
+              <div className="p-4 border rounded-lg">
+                <div className="flex items-center gap-3 mb-2">
+                  <FileText className="h-5 w-5 text-purple-500" />
+                  <h3 className="font-medium">Livro Diário</h3>
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Modelo para escrituração do livro diário
+                </p>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Baixar Template
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </>
-  )
+  );
 }

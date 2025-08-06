@@ -57,43 +57,47 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
 
         if (savedToken) {
-          setToken(savedToken);
+          try {
+            // Validar token fazendo uma requisição para o backend
+            await authApi.validateToken();
 
-          // Se há token mas não há user no localStorage, tentar decodificar do token
-          if (!savedUser && savedToken) {
-            try {
-              // Decodificar JWT para extrair informações básicas
-              const payload = JSON.parse(atob(savedToken.split('.')[1]));
-              const userData = {
-                id: payload.sub,
-                email: payload.email,
-                name: payload.email.split('@')[0], // Nome temporário baseado no email
-                role: payload.role
-              };
+            setToken(savedToken);
 
-              setUser(userData);
+            // Se há token mas não há user no localStorage, tentar decodificar do token
+            if (!savedUser && savedToken) {
+              try {
+                // Decodificar JWT para extrair informações básicas
+                const payload = JSON.parse(atob(savedToken.split('.')[1]));
+                const userData = {
+                  id: payload.sub,
+                  email: payload.email,
+                  name: payload.email.split('@')[0], // Nome temporário baseado no email
+                  role: payload.role
+                };
 
-              // Salvar no localStorage para próximas sessões
-              localStorage.setItem('token', savedToken);
-              localStorage.setItem('user', JSON.stringify(userData));
-            } catch (decodeError) {
-              console.error('Erro ao decodificar token:', decodeError);
+                setUser(userData);
+
+                // Salvar no localStorage para próximas sessões
+                localStorage.setItem('token', savedToken);
+                localStorage.setItem('user', JSON.stringify(userData));
+              } catch (decodeError) {
+                console.error('Erro ao decodificar token:', decodeError);
+              }
+            } else if (savedUser) {
+              setUser(JSON.parse(savedUser));
             }
-          } else if (savedUser) {
-            setUser(JSON.parse(savedUser));
+          } catch (error) {
+            // Token inválido, limpar dados
+            console.log('Token inválido, limpando dados de autenticação');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            // Limpar cookies também
+            if (typeof document !== 'undefined') {
+              document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            }
+            setToken(null);
+            setUser(null);
           }
-
-          // Temporariamente desabilitado para evitar loop
-          // TODO: Reabilitar validação do token quando backend estiver estável
-          // try {
-          //   await authApi.validateToken();
-          // } catch (error) {
-          //   // Token inválido, limpar dados
-          //   localStorage.removeItem('token');
-          //   localStorage.removeItem('user');
-          //   setToken(null);
-          //   setUser(null);
-          // }
         }
       } catch (error) {
         console.error('Erro ao inicializar autenticação:', error);

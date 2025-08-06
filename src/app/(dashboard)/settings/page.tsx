@@ -18,9 +18,11 @@ import {
 } from "@/components/ui/breadcrumb"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from "next-themes";
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [notifications, setNotifications] = useState({
     email: true,
     push: false,
@@ -276,7 +278,7 @@ export default function SettingsPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="theme">Tema</Label>
-                  <Select defaultValue="light">
+                  <Select value={theme} onValueChange={setTheme}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione um tema" />
                     </SelectTrigger>

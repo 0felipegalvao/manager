@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
 // Configuração base da API
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -12,10 +12,25 @@ const api: AxiosInstance = axios.create({
   },
 });
 
+// Função para obter token (pode ser do localStorage ou cookies)
+const getAuthToken = () => {
+  // Primeiro tenta localStorage
+  let token = localStorage.getItem('token');
+
+  // Se não encontrar, tenta cookies
+  if (!token && typeof document !== 'undefined') {
+    const cookies = document.cookie.split(';');
+    const tokenCookie = cookies.find(cookie => cookie.trim().startsWith('token='));
+    token = tokenCookie ? tokenCookie.split('=')[1] : null;
+  }
+
+  return token;
+};
+
 // Interceptor para adicionar token JWT nas requisições
 api.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
-    const token = localStorage.getItem('token');
+  (config: any) => {
+    const token = getAuthToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -32,13 +47,24 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    // Log do erro para debug
+    console.error('Erro na API:', {
+      status: error.response?.status,
+      message: error.response?.data?.message,
+      url: error.config?.url
+    });
+
     // Se o token expirou, redirecionar para login
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      // Limpar cookies também
+      if (typeof document !== 'undefined') {
+        document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      }
       window.location.href = '/login';
     }
-    
+
     return Promise.reject(error);
   }
 );

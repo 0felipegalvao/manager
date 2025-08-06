@@ -18,7 +18,7 @@ import { useApi } from '@/hooks/useApi';
 import { fiscalApi, clientsApi } from '@/lib/api';
 import { LoadingCard } from '@/components/ui/loading';
 
-function FiscalContent() {
+export default function FiscalPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedClient, setSelectedClient] = useState<string>('');
 
@@ -40,17 +40,17 @@ function FiscalContent() {
       return <Badge variant="destructive">Vencida</Badge>;
     }
 
-    const colors = {
-      PENDENTE: 'bg-yellow-100 text-yellow-800',
-      EM_ANDAMENTO: 'bg-blue-100 text-blue-800',
-      CONCLUIDA: 'bg-green-100 text-green-800',
-      CANCELADA: 'bg-red-100 text-red-800',
+    const statusVariants = {
+      PENDENTE: 'secondary',
+      EM_ANDAMENTO: 'default',
+      CONCLUIDA: 'default',
+      CANCELADA: 'destructive',
     } as const;
 
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800'}`}>
+      <Badge variant={statusVariants[status as keyof typeof statusVariants] || 'secondary'}>
         {status.replace('_', ' ')}
-      </span>
+      </Badge>
     );
   };
 
@@ -103,18 +103,36 @@ function FiscalContent() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Calendário Fiscal</h1>
-          <p className="text-gray-600">Gerencie obrigações fiscais e prazos</p>
+    <>
+      <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+        <div className="flex items-center gap-2 px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator
+            orientation="vertical"
+            className="mr-2 data-[orientation=vertical]:h-4"
+          />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbPage>Fiscal</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Nova Obrigação
-        </Button>
-      </div>
+      </header>
+
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Calendário Fiscal</h1>
+            <p className="text-muted-foreground">Gerencie obrigações fiscais e prazos</p>
+          </div>
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Nova Obrigação
+          </Button>
+        </div>
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4">
@@ -131,7 +149,7 @@ function FiscalContent() {
             <CardTitle className="text-sm font-medium">Próximas (30 dias)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
+            <div className="text-2xl font-bold text-yellow-500">
               {upcomingObligations?.length || 0}
             </div>
           </CardContent>
@@ -141,7 +159,7 @@ function FiscalContent() {
             <CardTitle className="text-sm font-medium">Vencidas</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-2xl font-bold text-red-500">
               {overdueObligations?.length || 0}
             </div>
           </CardContent>
@@ -151,7 +169,7 @@ function FiscalContent() {
             <CardTitle className="text-sm font-medium">Concluídas</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-green-500">
               {obligations?.filter((o: any) => o.status === 'CONCLUIDA').length || 0}
             </div>
           </CardContent>
@@ -184,7 +202,7 @@ function FiscalContent() {
             <CardContent>
               <div className="grid grid-cols-7 gap-2 mb-4">
                 {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
-                  <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
+                  <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground">
                     {day}
                   </div>
                 ))}
@@ -202,8 +220,8 @@ function FiscalContent() {
                       key={i}
                       className={`
                         p-2 min-h-[60px] border rounded-md
-                        ${isCurrentMonth ? 'bg-white' : 'bg-gray-50 text-gray-400'}
-                        ${hasObligations ? 'border-blue-200 bg-blue-50' : 'border-gray-200'}
+                        ${isCurrentMonth ? 'bg-card' : 'bg-muted/50 text-muted-foreground'}
+                        ${hasObligations ? 'border-blue-500/50 bg-blue-500/10' : 'border-border'}
                       `}
                     >
                       {isCurrentMonth && (
@@ -211,7 +229,7 @@ function FiscalContent() {
                           <div className="text-sm font-medium">{day}</div>
                           {hasObligations && (
                             <div className="mt-1">
-                              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                              <div className="w-2 h-2 bg-destructive rounded-full"></div>
                             </div>
                           )}
                         </>
@@ -253,11 +271,11 @@ function FiscalContent() {
                     {getUrgencyIcon(obligation.dueDate, obligation.status)}
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm">{obligation.name}</div>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="text-xs text-muted-foreground mt-1">
                         {clients?.find((c: any) => c.id === obligation.clientId)?.razaoSocial}
                       </div>
                       <div className="flex items-center justify-between mt-2">
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-muted-foreground">
                           Vence: {new Date(obligation.dueDate).toLocaleDateString('pt-BR')}
                         </div>
                         {getStatusBadge(obligation.status, obligation.dueDate)}
@@ -267,7 +285,7 @@ function FiscalContent() {
                 ))}
                 
                 {filteredObligations.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-muted-foreground">
                     Nenhuma obrigação encontrada
                   </div>
                 )}
@@ -276,31 +294,6 @@ function FiscalContent() {
           </Card>
         </div>
       </div>
-    </div>
-  );
-}
-
-export default function FiscalPage() {
-  return (
-    <>
-      <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-        <div className="flex items-center gap-2 px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator
-            orientation="vertical"
-            className="mr-2 data-[orientation=vertical]:h-4"
-          />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbPage>Fiscal</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </div>
-      </header>
-      <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-        <FiscalContent />
       </div>
     </>
   );
